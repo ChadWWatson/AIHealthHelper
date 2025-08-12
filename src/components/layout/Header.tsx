@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -37,10 +39,16 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 const Header = () => {
-  const [location] = useLocation();
-  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const {
+    data: session,
+    isPending, //loading state
+    error, //error object
+    refetch, //refetch the session
+  } = authClient.useSession();
   const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -76,7 +84,7 @@ const Header = () => {
               <Link href="/">
                 <span
                   className={`${
-                    location === "/"
+                    router.pathname === "/" || router.asPath === "/"
                       ? "border-primary-500 text-gray-900"
                       : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                   } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer`}
@@ -84,7 +92,7 @@ const Header = () => {
                   Find Care
                 </span>
               </Link>
-              {user && (
+              {session && (
                 <>
                   {/* Appointments & Scheduling */}
                   <DropdownMenu>
@@ -92,7 +100,7 @@ const Header = () => {
                       <button
                         className={`${
                           ["/dashboard", "/reminders", "/waitlist"].includes(
-                            location
+                            router.pathname
                           )
                             ? "border-primary-500 text-gray-900"
                             : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
@@ -144,7 +152,7 @@ const Header = () => {
                     <DropdownMenuTrigger asChild>
                       <button
                         className={`${
-                          ["/analytics"].includes(location)
+                          ["/analytics"].includes(router.pathname)
                             ? "border-primary-500 text-gray-900"
                             : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                         } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
