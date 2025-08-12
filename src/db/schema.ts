@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -14,6 +15,21 @@ export const user = pgTable("user", {
   updatedAt: timestamp("updated_at")
     .$defaultFn(() => /* @__PURE__ */ new Date())
     .notNull(),
+  firstName: text("first_name").default(""),
+  lastName: text("last_name").default(""),
+  phoneNumber: text("phone_number").default(""),
+  address: text("address").default(""),
+  postalCode: text("postal_code").default(""),
+  city: text("city").default(""),
+  province: text("province").default("Ontario"),
+  healthCardNumber: text("health_card_number"),
+  isDoctor: boolean("is_doctor").default(false),
+  isAdmin: boolean("is_admin").default(false),
+});
+
+export const insertUserSchema = createInsertSchema(user).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const session = pgTable("session", {
