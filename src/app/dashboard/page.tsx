@@ -1,3 +1,9 @@
+import { Logout } from "@/components/Logout";
+
 export default function Dashboard() {
-  return <div>Dashboard</div>;
+  return (
+    <div className="flex justify-center items-center h-screen">
+      <Logout />
+    </div>
+  );
 }
