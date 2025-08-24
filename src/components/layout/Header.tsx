@@ -13,7 +13,6 @@ import {
   Users,
   BarChart3,
   User,
-  Settings,
   Brain,
   MessageSquare,
   Camera,
@@ -35,40 +34,36 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { DarkModeToggle } from "@/components/DarkModeToggle";
 
 const Header = () => {
-  const router = useRouter();
+  const pathname = usePathname();
+  const queryClient = useQueryClient();
   const {
     data: session,
     isPending, //loading state
     error, //error object
     refetch, //refetch the session
   } = authClient.useSession();
-  const { toast } = useToast();
+  console.log(session);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
       await authClient.signOut();
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-      toast({
-        title: "Logged out successfully",
-      });
+      toast.success("Logged out successfully");
     } catch (error) {
-      toast({
-        title: "Error logging out",
-        variant: "destructive",
-      });
+      toast.error("Error logging out");
     }
   };
 
   return (
-    <header className="bg-white shadow-sm">
+    <header className="bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -84,7 +79,7 @@ const Header = () => {
               <Link href="/">
                 <span
                   className={`${
-                    router.pathname === "/" || router.asPath === "/"
+                    pathname === "/"
                       ? "border-primary-500 text-gray-900"
                       : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                   } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer`}
@@ -100,7 +95,7 @@ const Header = () => {
                       <button
                         className={`${
                           ["/dashboard", "/reminders", "/waitlist"].includes(
-                            router.pathname
+                            pathname
                           )
                             ? "border-primary-500 text-gray-900"
                             : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
@@ -152,7 +147,7 @@ const Header = () => {
                     <DropdownMenuTrigger asChild>
                       <button
                         className={`${
-                          ["/analytics"].includes(router.pathname)
+                          ["/analytics"].includes(pathname)
                             ? "border-primary-500 text-gray-900"
                             : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                         } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
@@ -286,8 +281,8 @@ const Header = () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {/* Doctor Tools */}
-                  {user.isDoctor && (
+                  {/* Doctor Tools - Temporarily hidden until user roles are implemented */}
+                  {/* {session.user?.isDoctor && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
@@ -296,7 +291,7 @@ const Header = () => {
                               "/patients",
                               "/referrals",
                               "/doctor-dashboard",
-                            ].includes(location)
+                            ].includes(pathname)
                               ? "border-primary-500 text-gray-900"
                               : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                           } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
@@ -341,31 +336,32 @@ const Header = () => {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  )}
+                  )} */}
 
-                  {/* Admin Portal */}
-                  {user.isAdmin && (
+                  {/* Admin Portal - Temporarily hidden until user roles are implemented */}
+                  {/* {session.user?.isAdmin && (
                     <Link href="/admin-dashboard">
-                      <a
+                      <span
                         className={`${
-                          location === "/admin-dashboard"
+                          pathname === "/admin-dashboard"
                             ? "border-primary-500 text-gray-900"
                             : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
                         } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
                       >
                         <Settings className="h-4 w-4 mr-1" />
                         Admin
-                      </a>
+                      </span>
                     </Link>
-                  )}
+                  )} */}
                 </>
               )}
             </nav>
           </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            {user ? (
+          <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-3">
+            <DarkModeToggle />
+            {session?.user ? (
               <>
-                <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <button className="bg-white dark:bg-gray-800 p-1 rounded-full text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:ring-offset-gray-800">
                   <span className="sr-only">View notifications</span>
                   <Bell className="h-6 w-6" />
                 </button>
@@ -375,16 +371,15 @@ const Header = () => {
                     <button className="ml-3 flex text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                       <span className="sr-only">Open user menu</span>
                       <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-semibold">
-                        {user.firstName?.[0]}
-                        {user.lastName?.[0]}
+                        {session.user.name?.[0] || "U"}
                       </div>
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>
-                      {user.firstName} {user.lastName}
+                      {session.user.name}
                       <div className="text-xs text-gray-500 font-normal">
-                        {user.email}
+                        {session.user.email}
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
@@ -404,7 +399,8 @@ const Header = () => {
                         </span>
                       </Link>
                     </DropdownMenuItem>
-                    {user.isAdmin && (
+                    {/* Admin Portal - Temporarily hidden until user roles are implemented */}
+                    {/* {session.user.isAdmin && (
                       <DropdownMenuItem asChild>
                         <Link href="/admin-dashboard">
                           <span className="flex items-center">
@@ -413,7 +409,7 @@ const Header = () => {
                           </span>
                         </Link>
                       </DropdownMenuItem>
-                    )}
+                    )} */}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
                       Log out
@@ -454,17 +450,17 @@ const Header = () => {
         <div className="sm:hidden">
           <div className="pt-2 pb-3 space-y-1">
             <Link href="/">
-              <a
+              <span
                 className={`${
-                  location === "/"
+                  pathname === "/"
                     ? "bg-primary-50 border-primary-500 text-primary-700"
                     : "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
                 } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
               >
                 Find Care
-              </a>
+              </span>
             </Link>
-            {user && (
+            {session?.user && (
               <>
                 {/* Appointments Section */}
                 <div className="border-l-4 border-gray-200 pl-3 pr-4 py-2">
@@ -472,19 +468,19 @@ const Header = () => {
                     Appointments
                   </div>
                   <Link href="/dashboard">
-                    <a className="block py-1 text-sm text-gray-600 hover:text-gray-900">
+                    <span className="block py-1 text-sm text-gray-600 hover:text-gray-900">
                       My Appointments
-                    </a>
+                    </span>
                   </Link>
                   <Link href="/reminders">
-                    <a className="block py-1 text-sm text-gray-600 hover:text-gray-900">
+                    <span className="block py-1 text-sm text-gray-600 hover:text-gray-900">
                       Reminders
-                    </a>
+                    </span>
                   </Link>
                   <Link href="/waitlist">
-                    <a className="block py-1 text-sm text-gray-600 hover:text-gray-900">
+                    <span className="block py-1 text-sm text-gray-600 hover:text-gray-900">
                       Waitlists
-                    </a>
+                    </span>
                   </Link>
                 </div>
 
@@ -494,93 +490,96 @@ const Header = () => {
                     Analytics
                   </div>
                   <Link href="/analytics">
-                    <a className="block py-1 text-sm text-gray-600 hover:text-gray-900">
+                    <span className="block py-1 text-sm text-gray-600 hover:text-gray-900">
                       View Analytics
-                    </a>
+                    </span>
                   </Link>
                 </div>
 
-                {/* Doctor Tools Section */}
-                {user.isDoctor && (
+                {/* Doctor Tools Section - Temporarily hidden until user roles are implemented */}
+                {/* {session.user.isDoctor && (
                   <div className="border-l-4 border-gray-200 pl-3 pr-4 py-2">
                     <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                       Doctor Tools
                     </div>
                     <Link href="/patients">
-                      <a className="block py-1 text-sm text-gray-600 hover:text-gray-900">
+                      <span className="block py-1 text-sm text-gray-600 hover:text-gray-900">
                         Patient Management
-                      </a>
+                      </span>
                     </Link>
                     <Link href="/referrals">
-                      <a className="block py-1 text-sm text-gray-600 hover:text-gray-900">
+                      <span className="block py-1 text-sm text-gray-600 hover:text-gray-900">
                         Referrals
-                      </a>
+                      </span>
                     </Link>
                     <Link href="/doctor-dashboard">
-                      <a className="block py-1 text-sm text-gray-600 hover:text-gray-900">
+                      <span className="block py-1 text-sm text-gray-600 hover:text-gray-900">
                         Doctor Dashboard
-                      </a>
+                      </span>
                     </Link>
                   </div>
-                )}
+                )} */}
 
-                {/* Admin Portal */}
-                {user.isAdmin && (
+                {/* Admin Portal - Temporarily hidden until user roles are implemented */}
+                {/* {session.user.isAdmin && (
                   <Link href="/admin-dashboard">
-                    <a
+                    <span
                       className={`${
-                        location === "/admin-dashboard"
+                        pathname === "/admin-dashboard"
                           ? "bg-primary-50 border-primary-500 text-primary-700"
                           : "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
                       } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
                     >
                       Admin Portal
-                    </a>
+                    </span>
                   </Link>
-                )}
+                )} */}
               </>
             )}
           </div>
-          {user ? (
+          {session?.user ? (
             <div className="pt-4 pb-3 border-t border-gray-200">
               <div className="flex items-center px-4">
                 <div className="flex-shrink-0">
-                  <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-semibold">
-                    {user.firstName?.[0]}
-                    {user.lastName?.[0]}
+                  <div className="h-10 w-10 rounded-full bg-primary-100 dark:bg-primary-800 flex items-center justify-center text-primary-600 dark:text-primary-300 font-semibold">
+                    {session.user.name?.[0] || "U"}
                   </div>
                 </div>
                 <div className="ml-3">
-                  <div className="text-base font-medium text-gray-800">
-                    {user.firstName} {user.lastName}
+                  <div className="text-base font-medium text-gray-800 dark:text-gray-200">
+                    {session.user.name}
                   </div>
-                  <div className="text-sm font-medium text-gray-500">
-                    {user.email}
+                  <div className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {session.user.email}
                   </div>
                 </div>
-                <button className="ml-auto flex-shrink-0 bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-                  <span className="sr-only">View notifications</span>
-                  <Bell className="h-6 w-6" />
-                </button>
+                <div className="ml-auto flex items-center space-x-3">
+                  <DarkModeToggle />
+                  <button className="flex-shrink-0 bg-white dark:bg-gray-800 p-1 rounded-full text-gray-400 hover:text-gray-500 dark:text-gray-300 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 dark:ring-offset-gray-800">
+                    <span className="sr-only">View notifications</span>
+                    <Bell className="h-6 w-6" />
+                  </button>
+                </div>
               </div>
               <div className="mt-3 space-y-1">
                 <Link href="/profile">
-                  <a className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                  <span className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
                     Profile Settings
-                  </a>
+                  </span>
                 </Link>
                 <Link href="/dashboard">
-                  <a className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                  <span className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
                     My Appointments
-                  </a>
+                  </span>
                 </Link>
-                {user.isAdmin && (
+                {/* Admin Portal - Temporarily hidden until user roles are implemented */}
+                {/* {session.user.isAdmin && (
                   <Link href="/admin-dashboard">
-                    <a className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
+                    <span className="block px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100">
                       Admin Portal
-                    </a>
+                    </span>
                   </Link>
-                )}
+                )} */}
                 <button
                   onClick={handleLogout}
                   className="block w-full text-left px-4 py-2 text-base font-medium text-gray-500 hover:text-gray-800 hover:bg-gray-100"
@@ -590,7 +589,10 @@ const Header = () => {
               </div>
             </div>
           ) : (
-            <div className="pt-4 pb-3 border-t border-gray-200 px-4 flex flex-col space-y-3">
+            <div className="pt-4 pb-3 border-t border-gray-200 dark:border-gray-700 px-4 flex flex-col space-y-3">
+              <div className="flex justify-center pb-3">
+                <DarkModeToggle />
+              </div>
               <Link href="/login">
                 <Button variant="outline" className="w-full">
                   Log in

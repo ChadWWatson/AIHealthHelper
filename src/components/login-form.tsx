@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { redirect } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import router from "next/router";
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -34,9 +36,15 @@ const formSchema = z.object({
 
 export function LoginForm({
   className,
+  patientMode = false,
+  redirectTo,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & {
+  patientMode?: boolean;
+  redirectTo?: string;
+}) {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,7 +56,7 @@ export function LoginForm({
   const signInWithGoogle = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      callbackURL: redirectTo || "/dashboard",
     });
   };
 
@@ -57,6 +65,11 @@ export function LoginForm({
     const { message, success } = await signIn(values);
     if (success) {
       toast.success(message as string);
+      if (redirectTo) {
+        redirect(redirectTo);
+      } else {
+        redirect("/dashboard");
+      }
     } else {
       toast.error((message as { error: string }).error);
     }
@@ -66,12 +79,9 @@ export function LoginForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
-        <CardHeader className="text-center">
+        {/* <CardHeader className="text-center">
           <CardTitle className="text-xl">Welcome back</CardTitle>
-          <CardDescription>
-            Login with your Apple or Google account
-          </CardDescription>
-        </CardHeader>
+        </CardHeader> */}
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -89,7 +99,7 @@ export function LoginForm({
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full"
+                    className="w-full bg-gray-800 text-white"
                     onClick={signInWithGoogle}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -113,9 +123,16 @@ export function LoginForm({
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>
+                            {patientMode ? "Username" : "Email"}
+                          </FormLabel>
                           <FormControl>
-                            <Input placeholder="me@example.com" {...field} />
+                            <Input
+                              placeholder={
+                                patientMode ? "johndoe" : "me@example.com"
+                              }
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -130,11 +147,57 @@ export function LoginForm({
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="password"
-                              {...field}
-                              type="password"
-                            />
+                            <div className="relative">
+                              <Input
+                                placeholder="password"
+                                {...field}
+                                type={showPassword ? "text" : "password"}
+                                className={patientMode ? "pr-10" : ""}
+                              />
+                              {patientMode && (
+                                <button
+                                  type="button"
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? (
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"
+                                      />
+                                    </svg>
+                                  ) : (
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.639 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.639 0-8.573-3.007-9.963-7.178z"
+                                      />
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15 12a3 0 11-6 0 3 3 0 016 0z"
+                                      />
+                                    </svg>
+                                  )}
+                                </button>
+                              )}
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -147,14 +210,35 @@ export function LoginForm({
                       Forgot your password?
                     </a>
                   </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="animate-spin" /> : "Login"}
+                  <Button
+                    type="submit"
+                    className={cn(
+                      "w-full text-white",
+                      patientMode
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : "bg-gray-800"
+                    )}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <Loader2 className="animate-spin" />
+                    ) : patientMode ? (
+                      "Log in"
+                    ) : (
+                      "Login"
+                    )}
                   </Button>
                 </div>
                 <div className="text-center text-sm">
                   Don&apos;t have an account?{" "}
-                  <a href="#" className="underline underline-offset-4">
-                    Sign up
+                  <a
+                    href="#"
+                    className={cn(
+                      "underline underline-offset-4",
+                      patientMode ? "text-green-600 hover:text-green-700" : ""
+                    )}
+                  >
+                    {patientMode ? "Sign up" : "Sign up"}
                   </a>
                 </div>
               </div>
