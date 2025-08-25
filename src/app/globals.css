@@ -37,6 +37,16 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  
+  /* Custom brand colors - add your colors here */
+  --color-brand-blue: oklch(0.6 0.2 240);
+  --color-brand-green: oklch(0.65 0.18 142);
+  --color-brand-purple: oklch(0.55 0.22 280);
+  --color-success: oklch(0.65 0.18 142);
+  --color-warning: oklch(0.75 0.15 85);
+  --color-error: oklch(0.65 0.22 25);
+  --color-info: oklch(0.6 0.2 240);
+  
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
